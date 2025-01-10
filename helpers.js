@@ -1,11 +1,12 @@
 import eSpeakNG from "espeak";
 
 const LOGGER = true;
-
+const outputBox = document.getElementById("outputBox");
+const additionalLog = document.getElementById("additionalLog");
 
 export async function readTextFile(file) {
   if ("caches" in window) {
-    const cache = await caches.open('json-cache');
+    const cache = await caches.open("json-cache");
     const cachedResponse = await cache.match(file);
     if (cachedResponse) {
       return await cachedResponse.json();
@@ -268,7 +269,9 @@ export async function fetchAndCombineChunks(chunksDir) {
   }
 
   // Combine all the chunks into a single ArrayBuffer
-  const chunks = await Promise.all(chunkUrls.map(async (res) => res.arrayBuffer()));
+  const chunks = await Promise.all(
+    chunkUrls.map(async (res) => res.arrayBuffer())
+  );
   const totalSize = chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
   const combined = new Uint8Array(totalSize);
 
@@ -285,5 +288,9 @@ export async function fetchAndCombineChunks(chunksDir) {
 export function log(...message) {
   if (LOGGER) {
     console.log(...message);
+  }
+  if (additionalLog.checked) {
+    outputBox.appendChild(document.createTextNode(...message));
+    outputBox.appendChild(document.createElement("br"));
   }
 }

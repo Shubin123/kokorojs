@@ -52,6 +52,12 @@
        border-color: blue;
       }
 
+      label {
+        display: inline-block;
+        width: 10px;
+        text-align: right;
+      }​
+
       #side-menu {
         max-height: 300px;
         overflow-y: auto;
@@ -78,6 +84,8 @@
         background-color: #2563eb;
       }
       
+      
+      
     </style>
   </head>
   <body>
@@ -87,38 +95,29 @@
         <!-- Main Section -->
         <div class="col-lg-8 mb-4">
           <div class="rounded-box">
-            <label for="userInput" class="form-label h5">Enter Text</label>
+            <label for="userInput" class="form-label h5">Input</label>
             <textarea
               id="userText"
               rows="4"
               placeholder="Write something to be processed..."
               class="form-control mb-3"
             ></textarea>
-
             <button id="susresBtn" class="btn btn-primary w-100 mb-3">
               Generate
             </button>
-
             <label for="outputBox" class="form-label h5">Output</label>
             <div
               id="outputBox"
               class="p-3 rounded-box border border-secondary"
               style="height: 200px; overflow-y: auto"
             >
-            
-
-              <!-- Output content will appear here -->
             </div>
-
-            <!-- <div id="blank" class="mt-3"></div> -->
-            <!-- <div id="status" class="mt-3"></div> -->
-
             <button id="downloadBtn" class="btn btn-secondary w-100 mb-3 mt-3" disabled>
                 Download
               </button>
           </div>
         </div>
-
+        <!-- side menu -->
         <div class="col-lg-4">
             <div id="side-menu" class="rounded-box">
               <h5 class="mb-3">Options</h5>
@@ -135,16 +134,22 @@
                 <option value="bf_emma">British - Female - Emma</option>
                 <option value="bf_isabella">British - Female - Isabella</option>
               </select>
-
-
+              <div class="form-check form-check-inline mb-3">
+                <label class="form-check-label" for="additionalLog">Additional Logging</label>
+                <input class="form-check-input" type="checkbox" id="additionalLog">
+              </div>
+              <br>
+              <div class="form-check form-check-inline mb-3">
+                <label class="form-check-label" for="cacheOverride">Disable Cache</label>
+                <input class="form-check-input" type="checkbox" id="cacheOverride">
+                
+              </div>
         </div>
       </div>
     </div>
-
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-
     <script type="importmap">
       {
         "imports": {
