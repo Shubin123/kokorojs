@@ -2,5 +2,6 @@
 
 # to use this project you will need to provide kokoro_v0_19.onnx file and put it in the project root.
 kokoro-v0_19.onnx can be split up into chunks to be more easily loaded
+# then run split.js (i used node runtime)
 
 # demo on (https://shubinwang.com/tts)
