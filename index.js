@@ -57,7 +57,7 @@ async function main() {
   const voiceSelection = document.querySelector("#voices");
   const selectedVoice = voiceSelection[voiceSelection.selectedIndex].value;
   log(selectedVoice);
-  const data = await readTextFile(`./voices_json/${selectedVoice}.json`);
+  const data = await readTextFile(`./voices_json/${selectedVoice}.json`, cacheOverride);
 
   // log(data.length);
   // log(data[0].length)

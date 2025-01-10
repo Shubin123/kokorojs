@@ -4,8 +4,9 @@ const LOGGER = true;
 const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
 
-export async function readTextFile(file) {
-  if ("caches" in window) {
+export async function readTextFile(file, cacheOverride) {
+  console.log(!cacheOverride.checked)
+  if ("caches" in window && !cacheOverride.checked) {
     const cache = await caches.open("json-cache");
     const cachedResponse = await cache.match(file);
     if (cachedResponse) {
