@@ -3,8 +3,9 @@ import eSpeakNG from "espeak";
 const LOGGER = true;
 const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
-
+const totalChunks = 5; // on the website we split into 5 chunks
 export async function readTextFile(file, cacheOverride) {
+  
   console.log(!cacheOverride.checked)
   if ("caches" in window && !cacheOverride.checked) {
     const cache = await caches.open("json-cache");
@@ -254,7 +255,7 @@ export async function fetchAndCombineChunks(chunksDir) {
   let index = 0;
 
   // Try fetching chunks sequentially until one fails
-  while (true) {
+  while (index < totalChunks) {
     const chunkUrl = `${chunksDir}/chunk_${index}.bin`;
     try {
       log(`Fetching: ${chunkUrl}`);
