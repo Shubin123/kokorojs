@@ -13,6 +13,7 @@ const susresBtn = document.getElementById("susresBtn");
 const userText = document.getElementById("userText");
 const outputBox = document.getElementById("outputBox");
 const cacheOverride = document.getElementById("cacheOverride");
+let combinedBuffer; // when we rerun main dont recreate this
 
 async function main() {
   // try {
@@ -20,7 +21,8 @@ async function main() {
   //   const modelUrl = "./kokoro-v0_19_chunks"; <---use this directory
 
   const modelChunksDir = "./kokoro-v0_19_chunks"; // Directory containing model chunks
-  let combinedBuffer;
+  
+  if (!combinedBuffer) {
   if ("caches" in window && !cacheOverride.checked) {
     log("Cache enabled");
     const cacheName = "onnx-model-cache";
@@ -42,6 +44,7 @@ async function main() {
     // Fetch the model chunks and combine them
     combinedBuffer = await fetchAndCombineChunks(modelChunksDir);
   }
+  }
 
   // Create a new session and load the model
   const session = await ort.InferenceSession.create(combinedBuffer);
@@ -54,30 +57,66 @@ async function main() {
 
   const tokens = await phonemizeAndTokenize(text, "en"); // token count does not conform to kokoro.py (when delimiters are used) more testing needed.
 
+
+  log(`tokens (${tokens.length}): ${tokens}`); //input_text->phenomizer->tokenize
+
+  
+  
   const voiceSelection = document.querySelector("#voices");
   const selectedVoice = voiceSelection[voiceSelection.selectedIndex].value;
-  log(selectedVoice);
+  log(`selectedVoice (voiceSelection.selectedIndex): (${selectedVoice})`); //voice tensor
   const data = await readTextFile(`./voices_json/${selectedVoice}.json`, cacheOverride);
 
-  // log(data.length);
-  // log(data[0].length)
-  // log(data[tokens.length][0]);
-  log(`tokens: ${tokens}`);
+  const style = new Float32Array(data[tokens.length][0]); 
 
-  const style = new Float32Array(data[tokens.length][0]);
-  // log(style)
+  
+  log(`style: ${style}`); 
+  
 
-  // log("Tokens:", tokens.length);
-  log(`style: ${style}`);
-  // prepare feeds. use model input names as keys.
-  const feeds = {
-    tokens: new ort.Tensor("int64", tokens, [1, tokens.length]),
-    style: new ort.Tensor("float32", style, [1, style.length]),
-    speed: new ort.Tensor("float32", [1]),
-  };
-  const results = await session.run(feeds); // this is now an audio buffer
-  // log(results);
+  // const feeds = {
+  //   tokens: new ort.Tensor("int64", tokens, [1, tokens.length]),
+  //   style: new ort.Tensor("float32", style, [1, style.length]),
+  //   speed: new ort.Tensor("float32", [1]),
+  // };
+  // const results = await session.run(feeds); // this is now an audio buffer
+  // // log(results);
 
+
+  let results = null;
+
+  if (Array.isArray(tokens[0])) {
+    // If tokens is an array of arrays, loop through each set of tokens
+    let combinedAudio = [];
+    for (const tokenSet of tokens) {
+      const style = new Float32Array(data[tokenSet.length][0]);
+      const feeds = {
+        tokens: new ort.Tensor("int64", tokenSet, [1, tokenSet.length]),
+        style: new ort.Tensor("float32", style, [1, style.length]),
+        speed: new ort.Tensor("float32", [1]),
+      };
+      const result = await session.run(feeds);
+      combinedAudio = combinedAudio.concat(Array.from(result.audio.cpuData));
+    }
+    results = { audio: { cpuData: new Float32Array(combinedAudio) } };
+  } else {
+    // If tokens is a single array
+    const style = new Float32Array(data[tokens.length][0]);
+    const feeds = {
+      tokens: new ort.Tensor("int64", tokens, [1, tokens.length]),
+      style: new ort.Tensor("float32", style, [1, style.length]),
+      speed: new ort.Tensor("float32", [1]),
+    };
+    results = await session.run(feeds);
+  }
+  
+  if (results == null) 
+  {
+    throw new Error("Failed to generate audio results.");
+  }
+
+
+
+  
   // Get the length in samples for the audio
   const originalLength = results.audio.cpuData.length;
 

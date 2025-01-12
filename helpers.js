@@ -214,9 +214,20 @@ export async function phonemizeAndTokenize(text, language = "en") {
   });
 
   // Tokenize Phonemes
-  const tokens = tokenize(phonemes);
+  let tokens = tokenize(phonemes);
+  const tokenChunks = []; // used if tokens too long.
+
+  // Ensure token count does not exceed 510
+  log(`Token count (${tokens.length}) exceeds 510, splitting into chunks of 510 tokens.`);
+  const chunkSize = 510;
+  for (let i = 0; i < tokens.length; i += chunkSize) {
+    tokenChunks.push(tokens.slice(i, i + chunkSize));
+  }
+  tokens = tokenChunks;
+
   return tokens;
 }
+
 
 export function download(data, filename, type) {
   log("download started");
