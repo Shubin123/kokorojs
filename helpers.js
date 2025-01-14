@@ -298,6 +298,31 @@ export async function fetchAndCombineChunks(chunksDir) {
   return combined.buffer; // Return the final ArrayBuffer
 }
 
+export async function startSession(modelChunksDir){
+if ("caches" in window && !cacheOverride.checked) {
+    log("Cache enabled");
+    const cacheName = "onnx-model-cache";
+    const cache = await caches.open(cacheName);
+    // Check if combined model buffer is cached
+    const cachedResponse = await cache.match(modelChunksDir);
+    if (cachedResponse) {
+      log("Using cached model");
+      return await cachedResponse.arrayBuffer();
+    } else {
+      log("Fetching model chunks and caching combined buffer");
+      
+      // Create a Response object with the combined buffer and cache it
+      const response = new Response(combinedBuffer);
+      await cache.put(modelChunksDir, response);
+      return await fetchAndCombineChunks(modelChunksDir);
+    }
+  } else {
+    log("Cache disabled");
+    // Fetch the model chunks and combine them
+    return await fetchAndCombineChunks(modelChunksDir);
+  }
+}
+
 export function log(...message) {
   if (LOGGER) {
     console.log(...message);
