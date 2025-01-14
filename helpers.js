@@ -3,6 +3,7 @@ import eSpeakNG from "espeak";
 const LOGGER = true;
 const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
+const cacheOverride = document.getElementById("cacheOverride");
 const totalChunks = 5; // on the website we split into 5 chunks
 export async function readTextFile(file, cacheOverride) {
   
