@@ -5,3 +5,5 @@ kokoro-v0_19.onnx can be split up into chunks to be more easily loaded
 # then run split.js (i used node runtime)
 
 # demo on (https://shubinwang.com/tts)
+
+# project will soon be deprecated as mainline npm package is available through https://github.com/hexgrad/kokoro
