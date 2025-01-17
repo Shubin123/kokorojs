@@ -1,26 +1,30 @@
-// import eSpeakNG from "espeak";
 import {
   log,
   readTextFile,
   encodeWAV,
   phonemizeAndTokenize,
   createDownloadButton,
-  startSession,
-
+  cacheModelChunks,
+  cacheEntireModel,
 } from "./helpers.js";
 
 const audioCtx = new (window.AudioContext || window.wexbkitAudioContext)();
 const susresBtn = document.getElementById("susresBtn");
 const userText = document.getElementById("userText");
 const cacheOverride = document.getElementById("cacheOverride");
+const modelChunksDir = "./model/model_quantized.onnx"; // Directory containing model chunks use ./kokoro-v0_19_chunks.onnx if your using modelVersion = 0.
+const cacheEntire = true;
+const modelVersion = 1; // either 0 or 1
+const inputKeys = ["tokens", "input_ids"]; //will be one of these
+const outputKeys = ["audio", "waveform"];
+
 let combinedBuffer; // when we rerun main dont recreate this
 
 async function main() {
-  log("main");
-  const modelChunksDir = "./kokoro-v0_19_chunks"; // Directory containing model chunks
-  
-  if (!combinedBuffer) {
-    combinedBuffer = await startSession(modelChunksDir);
+  if (!cacheEntire) {
+    combinedBuffer = await cacheModelChunks(modelChunksDir);
+  } else {
+    combinedBuffer = await cacheEntireModel(modelChunksDir);
   }
 
   // Create a new session and load the model
@@ -28,14 +32,17 @@ async function main() {
   log("model loaded");
   const text = userText.value;
   const tokens = await phonemizeAndTokenize(text, "en"); // token count does not conform to kokoro.py (when delimiters are used) more testing needed.
-  log(`tokens (${tokens.length}): ${tokens}`); //input_text->phenomizer->tokenize 
+  log(`tokens (${tokens.length}): ${tokens}`); //input_text->phenomizer->tokenize
   const voiceSelection = document.querySelector("#voices");
   const selectedVoice = voiceSelection[voiceSelection.selectedIndex].value;
   log(`selectedVoice : (${selectedVoice})`); //voice tensor
-  const styleData = await readTextFile(`./voices_json/${selectedVoice}.json`, cacheOverride);
-  const style = new Float32Array(styleData[tokens.length][0]);   
-  log(`style: ${style}`); 
-  
+  const styleData = await readTextFile(
+    `./voices_json/${selectedVoice}.json`,
+    cacheOverride
+  );
+  const style = new Float32Array(styleData[tokens.length][0]);
+  log(`style: ${style}`);
+
   let results = null;
 
   if (Array.isArray(tokens[0])) {
@@ -43,32 +50,40 @@ async function main() {
     let combinedAudio = [];
     for (const tokenSet of tokens) {
       const feeds = {
-        tokens: new ort.Tensor("int64", tokenSet, [1, tokenSet.length]),
+        [inputKeys[modelVersion]]: new ort.Tensor("int64", tokenSet, [
+          1,
+          tokenSet.length,
+        ]),
         style: new ort.Tensor("float32", style, [1, style.length]),
         speed: new ort.Tensor("float32", [1]),
       };
       const result = await session.run(feeds);
-      combinedAudio = combinedAudio.concat(Array.from(result.audio.cpuData));
+      console.log(result);
+      combinedAudio = combinedAudio.concat(
+        Array.from(result[outputKeys[modelVersion]].cpuData)
+      );
     }
     results = { audio: { cpuData: new Float32Array(combinedAudio) } };
   } else {
     // If tokens is a single array
     const style = new Float32Array(styleData[tokens.length][0]);
     const feeds = {
-      tokens: new ort.Tensor("int64", tokens, [1, tokens.length]),
-      style: new ort.Tensor("float32", styleData, [1, style.length]),
+      [inputKeys[modelVersion]]: new ort.Tensor("int64", tokens, [
+        1,
+        tokens.length,
+      ]),
+      style: new ort.Tensor("float32", style, [1, style.length]),
       speed: new ort.Tensor("float32", [1]),
     };
     results = await session.run(feeds);
   }
-  
-  if (results == null) 
-  {
+
+  if (results == null) {
     log("generation failed");
     throw new Error("Failed to generate audio results.");
   }
-  
-  // Get the length in samples for the audio
+  log(results);
+  // // Get the length in samples for the audio
   const originalLength = results.audio.cpuData.length;
 
   // Calculate the sample offset for the start and end
@@ -107,9 +122,9 @@ async function main() {
 
   log("done");
   susresBtn.style.display = true;
-  }
+}
 
-  susresBtn.onclick = async function () {
+susresBtn.onclick = async function () {
   await audioCtx.resume().then(function () {
     main();
   });
