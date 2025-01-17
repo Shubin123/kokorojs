@@ -4,6 +4,8 @@
 
 # to use this project open a basic http server with index.html in the root directory.
 
+# demo on https://shubinwang.com/tts
+
 ## to test the caching features https is required. model splitting feature is now optional since quantized model is so small.
 
 ### The orignal model by (kokoro-82m)[https://huggingface.co/hexgrad/Kokoro-82M/tree/main] by [Hexgrad](https://github.com/hexgrad). The model in this project is quantized version by Xenova [Joshua Lochner](https://github.com/xenova). 

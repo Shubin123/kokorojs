@@ -13,7 +13,7 @@ const susresBtn = document.getElementById("susresBtn");
 const userText = document.getElementById("userText");
 const cacheOverride = document.getElementById("cacheOverride");
 const modelChunksDir = "./model/model_quantized.onnx"; // Directory containing model chunks use ./kokoro-v0_19_chunks.onnx if your using modelVersion = 0.
-const cacheEntire = true;
+const cacheEntire = true; // change to false if using ./model_chunks as a directory
 const modelVersion = 1; // either 0 or 1
 const inputKeys = ["tokens", "input_ids"]; //will be one of these
 const outputKeys = ["audio", "waveform"];
