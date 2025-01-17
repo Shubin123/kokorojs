@@ -5,3 +5,4 @@ kokoro-v0_19.onnx
 TODO
 /.vscode
 /kokoro-v0_19_chunks
+/model_quantized_chunks

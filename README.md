@@ -1,9 +1,13 @@
-# largely inspired by what is acheived on hexgrad.com but with the different model (kokoro82m https://huggingface.co/hexgrad/Kokoro-82M/discussions/25)
+# This project does not use transformer.js and uses its own tokenizer. It uses [easpeak-ng](https://www.jsdelivr.com/package/npm/espeak-ng) and [onnxruntime-web](https://www.jsdelivr.com/package/npm/onnxruntime-web) packages delivered through cdns. It does not need node/npm to run.
 
-# to use this project you will need to provide kokoro_v0_19.onnx file and put it in the project root.
-kokoro-v0_19.onnx can be split up into chunks to be more easily loaded
-# then run split.js (i used node runtime)
+# a mainline npm package is available through https://github.com/hexgrad/kokoro 
 
-# demo on (https://shubinwang.com/tts)
+# to use this project open a basic http server with index.html in the root directory.
 
-# project will soon be deprecated as mainline npm package is available through https://github.com/hexgrad/kokoro
+## to test the caching features https is required. model splitting feature is now optional since quantized model is so small.
+
+### The orignal model by (kokoro-82m)[https://huggingface.co/hexgrad/Kokoro-82M/tree/main] by [Hexgrad](https://github.com/hexgrad). The model in this project is quantized version by Xenova [Joshua Lochner](https://github.com/xenova). 
+
+#### To use the original model(kokoro-v0_19.onnx) change ```modelVersion = 0``` in ```index.js``` and make sure to refrence the right model location/name!
+the model uses apache 2.0 lisence
+

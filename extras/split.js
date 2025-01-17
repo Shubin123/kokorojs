@@ -23,4 +23,5 @@ function splitModel(filePath, chunkSize = 80 * 1024 * 1024) {
 }
 
 // Example usage
-splitModel("kokoro-v0_19.onnx");
+// splitModel("./kokoro-v0_19.onnx");
+splitModel("./model/model_quantized.onnx");

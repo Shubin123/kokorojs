@@ -84,12 +84,17 @@
         background-color: #2563eb;
       }
       
-      
+      p{
+        font-size: 90%;
+      }
       
     </style>
   </head>
   <body>
+
+    
     <div class="container py-5">
+      
       <h1 class="text-center mb-4"><a class="h2" href="https://huggingface.co/hexgrad/Kokoro-82M">Kokoro-82M</a> / Text to speech</h1>
       <div class="row">
         <!-- Main Section -->
@@ -144,6 +149,15 @@
                 <input class="form-check-input" type="checkbox" id="cacheOverride">
                 
               </div>
+
+              <div class="disclosure-box form-check form-check-inline border border-secondary rounded p-3 mb-3" id="disclosureBox">
+                <h5>Hitting The Generate Button Means: </h5>
+                <p>You will download a 94MB model to cache.</p>
+                <p>The model ONLY runs on your own computer.</p>
+                <p>The use of premade voices (Adam, Bella, etc), must be disclosed.</p>
+                <p>Please personally consider the implications of using the model I am not a license expert.</p>
+                <p>refrences: <a href="https://choosealicense.com/licenses/apache-2.0/">apache-2</a> <a href="https://huggingface.co/hexgrad/Kokoro-82M">koroko-82M</a> <a href="https://hexgrad.com/">hexgrad</a>   </p>
+              </div>
         </div>
       </div>
     </div>
@@ -164,6 +178,7 @@
       }
     </script>
     <script type="module" src="helpers.js"></script>
-    <script type="module" src="index.js"></script>
+    <script type="module" src="index.js"></script> 
+    
   </body>
 </html>

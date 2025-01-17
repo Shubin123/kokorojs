@@ -6,8 +6,7 @@ const additionalLog = document.getElementById("additionalLog");
 const cacheOverride = document.getElementById("cacheOverride");
 const totalChunks = 5; // on the website we split into 5 chunks
 export async function readTextFile(file, cacheOverride) {
-  
-  console.log(!cacheOverride.checked)
+  console.log(!cacheOverride.checked);
   if ("caches" in window && !cacheOverride.checked) {
     const cache = await caches.open("json-cache");
     const cachedResponse = await cache.match(file);
@@ -219,7 +218,9 @@ export async function phonemizeAndTokenize(text, language = "en") {
   const tokenChunks = []; // used if tokens too long.
 
   // Ensure token count does not exceed 510
-  log(`Token count (${tokens.length}) exceeds 510, splitting into chunks of 510 tokens.`);
+  log(
+    `if token count ${tokens.length} exceeds 510, split into chunks of 510 tokens.`
+  );
   const chunkSize = 510;
   for (let i = 0; i < tokens.length; i += chunkSize) {
     tokenChunks.push(tokens.slice(i, i + chunkSize));
@@ -228,7 +229,6 @@ export async function phonemizeAndTokenize(text, language = "en") {
 
   return tokens;
 }
-
 
 export function download(data, filename, type) {
   log("download started");
@@ -299,10 +299,10 @@ export async function fetchAndCombineChunks(chunksDir) {
   return combined.buffer; // Return the final ArrayBuffer
 }
 
-export async function startSession(modelChunksDir){
-if ("caches" in window && !cacheOverride.checked) {
+export async function cacheModelChunks(modelChunksDir) {
+  if ("caches" in window && !cacheOverride.checked) {
     log("Cache enabled");
-    const cacheName = "onnx-model-cache";
+    const cacheName = "onnx-model-chunks-cache";
     const cache = await caches.open(cacheName);
     // Check if combined model buffer is cached
     const cachedResponse = await cache.match(modelChunksDir);
@@ -311,16 +311,43 @@ if ("caches" in window && !cacheOverride.checked) {
       return await cachedResponse.arrayBuffer();
     } else {
       log("Fetching model chunks and caching combined buffer");
-      
+      const combinedBuffer = await fetchAndCombineChunks(modelChunksDir);
       // Create a Response object with the combined buffer and cache it
       const response = new Response(combinedBuffer);
       await cache.put(modelChunksDir, response);
-      return await fetchAndCombineChunks(modelChunksDir);
+      return combinedBuffer;
     }
   } else {
     log("Cache disabled");
     // Fetch the model chunks and combine them
     return await fetchAndCombineChunks(modelChunksDir);
+  }
+}
+
+export async function cacheEntireModel(modelPath) {
+  if ("caches" in window && !cacheOverride.checked) {
+    log("Cache enabled");
+    const cacheName = "onnx-model-cache";
+    const cache = await caches.open(cacheName);
+    // Check if the model is cached
+    const cachedResponse = await cache.match(modelPath);
+    if (cachedResponse) {
+      log("Using cached model");
+      return await cachedResponse.arrayBuffer();
+    } else {
+      log("Fetching model and caching it");
+      const response = await fetch(modelPath);
+      const modelBuffer = await response.arrayBuffer();
+      // Create a Response object with the model buffer and cache it
+      const cacheResponse = new Response(modelBuffer);
+      await cache.put(modelPath, cacheResponse);
+      return modelBuffer;
+    }
+  } else {
+    log("Cache disabled");
+    // Fetch the model directly
+    const response = await fetch(modelPath);
+    return await response.arrayBuffer();
   }
 }
 
