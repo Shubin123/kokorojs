@@ -1,5 +1,6 @@
 import {
   log,
+  logAlways,
   readTextFile,
   encodeWAV,
   phonemizeAndTokenize,
@@ -21,6 +22,7 @@ const outputKeys = ["audio", "waveform"];
 let combinedBuffer; // when we rerun main dont recreate this
 
 async function main() {
+  
   if (!cacheEntire) {
     combinedBuffer = await cacheModelChunks(modelChunksDir);
   } else {
@@ -29,10 +31,10 @@ async function main() {
 
   // Create a new session and load the model
   const session = await ort.InferenceSession.create(combinedBuffer);
-  log("model loaded");
+  logAlways("model loaded");
   const text = userText.value;
   const tokens = await phonemizeAndTokenize(text, "en"); // token count does not conform to kokoro.py (when delimiters are used) more testing needed.
-  log(`tokens (${tokens.length}): ${tokens}`); //input_text->phenomizer->tokenize
+  log(`tokens (${tokens[0].length}): ${tokens}`); //input_text->phenomizer->tokenize
   const voiceSelection = document.querySelector("#voices");
   const selectedVoice = voiceSelection[voiceSelection.selectedIndex].value;
   log(`selectedVoice : (${selectedVoice})`); //voice tensor
@@ -82,7 +84,6 @@ async function main() {
     log("generation failed");
     throw new Error("Failed to generate audio results.");
   }
-  log(results);
   // // Get the length in samples for the audio
   const originalLength = results.audio.cpuData.length;
 
@@ -90,6 +91,8 @@ async function main() {
   const sampleRate = 24000;
   const startCut = 0.0 * sampleRate; // seconds * sampleRate
   const endCut = 0.0 * sampleRate;
+  const audioDuration = results.audio.cpuData.length / sampleRate;
+  logAlways(`done! duration of audio: ${audioDuration}s`);
 
   // Ensure we don't go out of bounds
   const endIndex = originalLength - endCut;
@@ -119,8 +122,6 @@ async function main() {
       "Invalid audio slice parameters. Check that the start and end positions are correct."
     );
   }
-
-  log("done");
   susresBtn.style.display = true;
 }
 
