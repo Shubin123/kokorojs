@@ -8,6 +8,8 @@
 
 ## to test the caching features https is required. model splitting feature is now optional since quantized model is so small.
 
+## running the model with multiple cores require the right server [CORS headers](./extras/example.toml) 
+
 ### The orignal model by (kokoro-82m)[https://huggingface.co/hexgrad/Kokoro-82M/tree/main] by [Hexgrad](https://github.com/hexgrad). The model in this project is quantized version by Xenova [Joshua Lochner](https://github.com/xenova). 
 
 #### To use the original model(kokoro-v0_19.onnx) change ```modelVersion = 0``` in ```index.js``` and make sure to refrence the right model location/name!

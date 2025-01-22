@@ -23,15 +23,19 @@ let combinedBuffer; // when we rerun main dont recreate this
 
 async function main() {
   
+  ort.env.wasm.numThreads=navigator.hardwareConcurrency; // enables all cores, thanks ken107 for the suggestion!
+  // ort.env.wasm.proxy = true;
+  if (!combinedBuffer){ // when session is already in memory
   if (!cacheEntire) {
     combinedBuffer = await cacheModelChunks(modelChunksDir);
   } else {
     combinedBuffer = await cacheEntireModel(modelChunksDir);
   }
+  logAlways("model loaded");
+  }
 
   // Create a new session and load the model
   const session = await ort.InferenceSession.create(combinedBuffer);
-  logAlways("model loaded");
   const text = userText.value;
   const tokens = await phonemizeAndTokenize(text, "en"); // token count does not conform to kokoro.py (when delimiters are used) more testing needed.
   log(`tokens (${tokens[0].length}): ${tokens}`); //input_text->phenomizer->tokenize
