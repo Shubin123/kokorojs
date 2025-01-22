@@ -1,0 +1,9 @@
+# The server configuation I use for Netlify. Rename this file netlify.toml put in project root.
+# Please note the different header Policy values.
+[[headers]]
+  # Define which paths this specific [[headers]] block will cover.
+  for = "/*" # change this to the path you want to cover e.g. "/tts"
+    [headers.values]
+    Cross-Origin-Embedder-Policy =  "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "cross-origin"
