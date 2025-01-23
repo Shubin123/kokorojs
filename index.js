@@ -20,7 +20,7 @@ const inputKeys = ["tokens", "input_ids"]; //will be one of these
 const outputKeys = ["audio", "waveform"];
 
 let combinedBuffer; // when we rerun main dont recreate this
-
+let session;
 async function main() {
   
   ort.env.wasm.numThreads=navigator.hardwareConcurrency; // enables all cores, thanks ken107 for the suggestion!
@@ -35,7 +35,9 @@ async function main() {
   }
 
   // Create a new session and load the model
-  const session = await ort.InferenceSession.create(combinedBuffer);
+  if (!session){
+  session = await ort.InferenceSession.create(combinedBuffer);
+  }
   const text = userText.value;
   const tokens = await phonemizeAndTokenize(text, "en"); // token count does not conform to kokoro.py (when delimiters are used) more testing needed.
   log(`tokens (${tokens[0].length}): ${tokens}`); //input_text->phenomizer->tokenize
