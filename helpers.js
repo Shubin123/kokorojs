@@ -5,6 +5,29 @@ const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
 const cacheOverride = document.getElementById("cacheOverride");
 const totalChunks = 5; // on the website we split into 5 chunks
+
+// Known SHA-256 digests for shipped model assets, used to verify integrity
+// of fetched/cached ONNX model bytes against tampering in transit or at rest.
+const KNOWN_MODEL_HASHES = {
+  "./model/model_quantized.onnx":
+    "0d55b15d4b735d61a21b0105136bc81b8768c4db94753193c19354fa863cd556",
+};
+
+async function verifyModelIntegrity(buffer, path) {
+  const expectedHash = KNOWN_MODEL_HASHES[path];
+  if (!expectedHash) {
+    return buffer; // no known digest for this path (e.g. custom model config)
+  }
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  const hashHex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  if (hashHex !== expectedHash) {
+    throw new Error(`Model integrity check failed for ${path}`);
+  }
+  return buffer;
+}
+
 export async function readTextFile(file, cacheOverride) {
   console.log(!cacheOverride.checked);
   if ("caches" in window && !cacheOverride.checked) {
@@ -366,7 +389,7 @@ export async function fetchAndCombineChunks(chunksDir) {
   }
 
   log(`Successfully combined ${index} chunks into a single buffer`);
-  return combined.buffer; // Return the final ArrayBuffer
+  return verifyModelIntegrity(combined.buffer, chunksDir); // Return the final ArrayBuffer
 }
 
 export async function cacheModelChunks(modelChunksDir) {
@@ -378,7 +401,10 @@ export async function cacheModelChunks(modelChunksDir) {
     const cachedResponse = await cache.match(modelChunksDir);
     if (cachedResponse) {
       log("Using cached model");
-      return await cachedResponse.arrayBuffer();
+      return verifyModelIntegrity(
+        await cachedResponse.arrayBuffer(),
+        modelChunksDir
+      );
     } else {
       log("Fetching model chunks and caching combined buffer");
       const combinedBuffer = await fetchAndCombineChunks(modelChunksDir);
@@ -403,11 +429,14 @@ export async function cacheEntireModel(modelPath) {
     const cachedResponse = await cache.match(modelPath);
     if (cachedResponse) {
       log("Using cached model");
-      return await cachedResponse.arrayBuffer();
+      return verifyModelIntegrity(await cachedResponse.arrayBuffer(), modelPath);
     } else {
       log("Fetching model and caching it");
       const response = await fetch(modelPath);
-      const modelBuffer = await response.arrayBuffer();
+      const modelBuffer = await verifyModelIntegrity(
+        await response.arrayBuffer(),
+        modelPath
+      );
       // Create a Response object with the model buffer and cache it
       const cacheResponse = new Response(modelBuffer);
       await cache.put(modelPath, cacheResponse);
@@ -417,7 +446,7 @@ export async function cacheEntireModel(modelPath) {
     log("Cache disabled");
     // Fetch the model directly
     const response = await fetch(modelPath);
-    return await response.arrayBuffer();
+    return verifyModelIntegrity(await response.arrayBuffer(), modelPath);
   }
 }
 
