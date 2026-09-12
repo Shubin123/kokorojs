@@ -1,10 +1,12 @@
 import eSpeakNG from "espeak";
+import { verifyModelIntegrity, MODEL_PATH } from "./modelIntegrity.js";
 
 const LOGGER = true;
 const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
 const cacheOverride = document.getElementById("cacheOverride");
 const totalChunks = 5; // on the website we split into 5 chunks
+
 export async function readTextFile(file, cacheOverride) {
   console.log(!cacheOverride.checked);
   if ("caches" in window && !cacheOverride.checked) {
@@ -366,7 +368,10 @@ export async function fetchAndCombineChunks(chunksDir) {
   }
 
   log(`Successfully combined ${index} chunks into a single buffer`);
-  return combined.buffer; // Return the final ArrayBuffer
+  // The shards are byte-splits of MODEL_PATH (see extras/split.js), so the
+  // assembled buffer's identity to verify against is always MODEL_PATH,
+  // regardless of which directory the chunks were fetched from.
+  return verifyModelIntegrity(combined.buffer, MODEL_PATH); // Return the final ArrayBuffer
 }
 
 export async function cacheModelChunks(modelChunksDir) {
@@ -378,7 +383,10 @@ export async function cacheModelChunks(modelChunksDir) {
     const cachedResponse = await cache.match(modelChunksDir);
     if (cachedResponse) {
       log("Using cached model");
-      return await cachedResponse.arrayBuffer();
+      return verifyModelIntegrity(
+        await cachedResponse.arrayBuffer(),
+        MODEL_PATH
+      );
     } else {
       log("Fetching model chunks and caching combined buffer");
       const combinedBuffer = await fetchAndCombineChunks(modelChunksDir);
@@ -403,11 +411,14 @@ export async function cacheEntireModel(modelPath) {
     const cachedResponse = await cache.match(modelPath);
     if (cachedResponse) {
       log("Using cached model");
-      return await cachedResponse.arrayBuffer();
+      return verifyModelIntegrity(await cachedResponse.arrayBuffer(), modelPath);
     } else {
       log("Fetching model and caching it");
       const response = await fetch(modelPath);
-      const modelBuffer = await response.arrayBuffer();
+      const modelBuffer = await verifyModelIntegrity(
+        await response.arrayBuffer(),
+        modelPath
+      );
       // Create a Response object with the model buffer and cache it
       const cacheResponse = new Response(modelBuffer);
       await cache.put(modelPath, cacheResponse);
@@ -417,7 +428,7 @@ export async function cacheEntireModel(modelPath) {
     log("Cache disabled");
     // Fetch the model directly
     const response = await fetch(modelPath);
-    return await response.arrayBuffer();
+    return verifyModelIntegrity(await response.arrayBuffer(), modelPath);
   }
 }
 
