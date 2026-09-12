@@ -1,32 +1,11 @@
 import eSpeakNG from "espeak";
+import { verifyModelIntegrity, MODEL_PATH } from "./modelIntegrity.js";
 
 const LOGGER = true;
 const outputBox = document.getElementById("outputBox");
 const additionalLog = document.getElementById("additionalLog");
 const cacheOverride = document.getElementById("cacheOverride");
 const totalChunks = 5; // on the website we split into 5 chunks
-
-// Known SHA-256 digests for shipped model assets, used to verify integrity
-// of fetched/cached ONNX model bytes against tampering in transit or at rest.
-const KNOWN_MODEL_HASHES = {
-  "./model/model_quantized.onnx":
-    "0d55b15d4b735d61a21b0105136bc81b8768c4db94753193c19354fa863cd556",
-};
-
-async function verifyModelIntegrity(buffer, path) {
-  const expectedHash = KNOWN_MODEL_HASHES[path];
-  if (!expectedHash) {
-    return buffer; // no known digest for this path (e.g. custom model config)
-  }
-  const digest = await crypto.subtle.digest("SHA-256", buffer);
-  const hashHex = Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  if (hashHex !== expectedHash) {
-    throw new Error(`Model integrity check failed for ${path}`);
-  }
-  return buffer;
-}
 
 export async function readTextFile(file, cacheOverride) {
   console.log(!cacheOverride.checked);
@@ -389,7 +368,10 @@ export async function fetchAndCombineChunks(chunksDir) {
   }
 
   log(`Successfully combined ${index} chunks into a single buffer`);
-  return verifyModelIntegrity(combined.buffer, chunksDir); // Return the final ArrayBuffer
+  // The shards are byte-splits of MODEL_PATH (see extras/split.js), so the
+  // assembled buffer's identity to verify against is always MODEL_PATH,
+  // regardless of which directory the chunks were fetched from.
+  return verifyModelIntegrity(combined.buffer, MODEL_PATH); // Return the final ArrayBuffer
 }
 
 export async function cacheModelChunks(modelChunksDir) {
@@ -403,7 +385,7 @@ export async function cacheModelChunks(modelChunksDir) {
       log("Using cached model");
       return verifyModelIntegrity(
         await cachedResponse.arrayBuffer(),
-        modelChunksDir
+        MODEL_PATH
       );
     } else {
       log("Fetching model chunks and caching combined buffer");
